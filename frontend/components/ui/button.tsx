@@ -11,8 +11,9 @@ export function Button({ className, variant = "primary", ...props }: ButtonProps
       className={clsx(
         "inline-flex h-11 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold transition duration-200 disabled:cursor-not-allowed disabled:opacity-50",
         variant === "primary" &&
-          "bg-gradient-to-r from-indigo-500 via-violet-500 to-fuchsia-500 text-white shadow-soft hover:-translate-y-0.5 hover:shadow-lg",
-        variant === "secondary" && "bg-white text-ink shadow-soft ring-1 ring-black/5 hover:bg-mint",
+          "bg-gradient-to-r from-green-200 via-blue-200 to-purple-200 text-white shadow-soft hover:translate-y-0 hover:shadow-lg",
+        variant === "secondary" &&
+          "bg-white text-ink shadow-soft ring-1 ring-purple-200 hover:bg-purple-50",
         variant === "ghost" && "bg-transparent text-ink hover:bg-white/60",
         variant === "danger" && "bg-coral text-white hover:bg-[#ee644b]",
         className,
