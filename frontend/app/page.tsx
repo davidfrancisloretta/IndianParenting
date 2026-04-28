@@ -23,19 +23,24 @@ export default function LoginPage() {
       await login(identifier, password);
       router.push("/parent");
     } catch (err) {
+      console.error("Login error caught:", err, typeof err);
+      let errorText = "Login failed";
       if (err instanceof Error) {
-        setError(err.message);
+        errorText = String(err.message || err).trim() || "Login failed";
       } else if (typeof err === "string") {
-        setError(err);
-      } else if (typeof err === "object" && err !== null) {
+        errorText = err.trim() || "Login failed";
+      } else if (err && typeof err === "object") {
         try {
-          setError(JSON.stringify(err));
+          errorText = JSON.stringify(err);
         } catch {
-          setError(String(err));
+          errorText = String(err) || "Login failed";
         }
-      } else {
-        setError("Login failed");
       }
+      // Final safety: ensure no [object Object] slips through
+      if (errorText === "[object Object]") {
+        errorText = "Login failed";
+      }
+      setError(errorText);
     } finally {
       setLoading(false);
     }

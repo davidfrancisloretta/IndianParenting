@@ -91,10 +91,22 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
     },
   });
   if (!response.ok) {
-    const body = await response.json().catch(() => ({}));
-    const detailRaw = body?.detail ?? body?.error ?? (Object.keys(body).length ? body : null);
-    const detail = typeof detailRaw === "string" ? detailRaw : detailRaw ? JSON.stringify(detailRaw) : null;
-    throw new Error(detail ?? `Request failed: ${response.status}`);
+    let errorMsg = `Request failed: ${response.status}`;
+    try {
+      const body = await response.json().catch(() => null);
+      const detail = body?.detail ?? body?.error;
+      if (typeof detail === "string" && detail.trim()) {
+        errorMsg = detail;
+      } else if (body && typeof body === "object" && Object.keys(body).length > 0) {
+        const stringified = JSON.stringify(body);
+        if (stringified && stringified !== "{}" && stringified !== "[]") {
+          errorMsg = stringified;
+        }
+      }
+    } catch (parseErr) {
+      // Silently ignore parse errors
+    }
+    throw new Error(String(errorMsg));
   }
   return response.json();
 }
