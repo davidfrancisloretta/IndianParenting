@@ -1,10 +1,24 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { BarChart3, Check, ChevronRight, CircleDollarSign, ClipboardCheck, Plus, Settings, Trophy, X } from "lucide-react";
+import {
+  BarChart3,
+  Check,
+  ChevronRight,
+  CircleDollarSign,
+  ClipboardCheck,
+  LogOut,
+  Plus,
+  Settings,
+  SlidersHorizontal,
+  Trophy,
+  UserRound,
+  X,
+} from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-import { api, Child, DailyLog } from "@/lib/api";
+import { api, Child, DailyLog, ParentProfile } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
@@ -36,7 +50,9 @@ function avatarLetter(name: string) {
 }
 
 export default function ParentDashboard() {
+  const router = useRouter();
   const [dashboard, setDashboard] = useState<Dashboard | null>(null);
+  const [profile, setProfile] = useState<ParentProfile | null>(null);
   const [pending, setPending] = useState<DailyLog[]>([]);
   const [payouts, setPayouts] = useState<Payout[]>([]);
   const [error, setError] = useState("");
@@ -44,14 +60,16 @@ export default function ParentDashboard() {
 
   async function load() {
     try {
-      const [dashboardData, pendingData, payoutData] = await Promise.all([
+      const [dashboardData, pendingData, payoutData, profileData] = await Promise.all([
         api<Dashboard>("/dashboard"),
         api<DailyLog[]>("/approvals/pending"),
         api<Payout[]>("/payouts/weekly"),
+        api<ParentProfile>("/me"),
       ]);
       setDashboard(dashboardData);
       setPending(pendingData);
       setPayouts(payoutData);
+      setProfile(profileData);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not load dashboard");
     }
@@ -68,6 +86,11 @@ export default function ParentDashboard() {
       body: JSON.stringify({ approved, value }),
     });
     await load();
+  }
+
+  function logout() {
+    window.localStorage.removeItem("token");
+    router.push("/");
   }
 
   const maxPoints = useMemo(() => Math.max(1, ...Object.values(dashboard?.weekly_totals ?? { value: 1 })), [dashboard]);
@@ -94,7 +117,12 @@ export default function ParentDashboard() {
             </Link>
             <Link href="/chores">
               <Button variant="secondary" className="h-12 rounded-2xl border-0 px-5">
-                <Settings size={18} /> Edit chores
+                <SlidersHorizontal size={18} /> Edit chores
+              </Button>
+            </Link>
+            <Link href="/settings">
+              <Button variant="secondary" className="h-12 rounded-2xl border-0 px-5">
+                <Settings size={18} /> Settings
               </Button>
             </Link>
             <Button
@@ -105,6 +133,34 @@ export default function ParentDashboard() {
             </Button>
           </div>
         </header>
+
+        <Card className="mb-8 border-2 border-white/80 bg-white/90 p-5">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div className="flex items-center gap-4">
+              <span className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-pink-500 text-xl font-black text-white shadow-lg shadow-violet-500/25">
+                <UserRound size={26} />
+              </span>
+              <div>
+                <p className="text-sm font-black uppercase tracking-wide text-violet-600">Parent profile</p>
+                <p className="text-xl font-black text-slate-950">{profile?.user.email ?? "Parent"}</p>
+                <p className="text-sm font-medium text-slate-600">
+                  {profile?.user.role ?? "PARENT"} - {profile?.user.phone_number ?? "No phone"} -{" "}
+                  {profile?.family.name ?? dashboard?.family.name ?? "Family"}
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              <Link href="/settings">
+                <Button variant="secondary" className="h-11 rounded-2xl border-0 px-5">
+                  <Settings size={18} /> Settings
+                </Button>
+              </Link>
+              <Button variant="danger" className="h-11 rounded-2xl px-5" onClick={logout}>
+                <LogOut size={18} /> Logout
+              </Button>
+            </div>
+          </div>
+        </Card>
 
         {customOpen ? <CustomChoreForm onSaved={load} /> : null}
 
