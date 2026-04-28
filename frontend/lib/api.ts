@@ -1,6 +1,6 @@
 export const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
-export type Child = { id: string; name: string; avatar_color: string };
+export type Child = { id: string; name: string; date_of_birth?: string | null; avatar_color: string };
 export type Chore = {
   id: string;
   family_id: string | null;
@@ -25,6 +25,22 @@ export type DailyLog = {
   approved_value?: number | null;
   points_awarded: number;
   note?: string | null;
+};
+export type ParentProfile = {
+  user: {
+    id: string;
+    full_name?: string | null;
+    email: string;
+    phone_number?: string | null;
+    date_of_birth?: string | null;
+    role: "PARENT" | "ADMIN";
+  };
+  family: {
+    id: string;
+    name: string;
+    point_to_rupee_rate: number;
+  };
+  children: Child[];
 };
 export type ChoreAnalytics = {
   chore_id: string;
@@ -76,15 +92,16 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    throw new Error(body.detail ?? `Request failed: ${response.status}`);
+    const detail = body?.detail ?? body?.error ?? (Object.keys(body).length ? JSON.stringify(body) : null);
+    throw new Error(detail ?? `Request failed: ${response.status}`);
   }
   return response.json();
 }
 
-export async function login(email: string, password: string) {
+export async function login(identifier: string, password: string) {
   const data = await api<{ access_token: string }>("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ identifier, password }),
   });
   window.localStorage.setItem("token", data.access_token);
   return data;
