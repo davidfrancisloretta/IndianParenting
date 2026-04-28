@@ -99,9 +99,11 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
 }
 
 export async function login(identifier: string, password: string) {
+  // Backend expects `email` (LoginIn). Use `identifier` as email when it contains '@'.
+  const payload = identifier.includes("@") ? { email: identifier, password } : { email: identifier, password };
   const data = await api<{ access_token: string }>("/auth/login", {
     method: "POST",
-    body: JSON.stringify({ identifier, password }),
+    body: JSON.stringify(payload),
   });
   window.localStorage.setItem("token", data.access_token);
   return data;
