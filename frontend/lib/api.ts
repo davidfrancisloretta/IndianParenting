@@ -92,7 +92,8 @@ export async function api<T>(path: string, options: RequestInit = {}): Promise<T
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
-    const detail = body?.detail ?? body?.error ?? (Object.keys(body).length ? JSON.stringify(body) : null);
+    const detailRaw = body?.detail ?? body?.error ?? (Object.keys(body).length ? body : null);
+    const detail = typeof detailRaw === "string" ? detailRaw : detailRaw ? JSON.stringify(detailRaw) : null;
     throw new Error(detail ?? `Request failed: ${response.status}`);
   }
   return response.json();
