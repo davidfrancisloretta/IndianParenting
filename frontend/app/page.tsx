@@ -23,23 +23,40 @@ export default function LoginPage() {
       await login(identifier, password);
       router.push("/parent");
     } catch (err) {
-      console.error("Login error caught:", err, typeof err);
       let errorText = "Login failed";
-      if (err instanceof Error) {
-        errorText = String(err.message || err).trim() || "Login failed";
+      
+      // Defensive extraction of error message
+      if (err instanceof Error && err.message) {
+        errorText = String(err.message).trim();
       } else if (typeof err === "string") {
-        errorText = err.trim() || "Login failed";
+        errorText = String(err).trim();
       } else if (err && typeof err === "object") {
-        try {
-          errorText = JSON.stringify(err);
-        } catch {
-          errorText = String(err) || "Login failed";
+        // Try to extract a useful message from the object
+        const errObj = err as Record<string, any>;
+        if (errObj.message && typeof errObj.message === "string") {
+          errorText = String(errObj.message).trim();
+        } else if (errObj.detail && typeof errObj.detail === "string") {
+          errorText = String(errObj.detail).trim();
+        } else if (errObj.error && typeof errObj.error === "string") {
+          errorText = String(errObj.error).trim();
+        } else {
+          try {
+            const stringified = JSON.stringify(errObj);
+            if (stringified && stringified !== "{}" && stringified !== "[object Object]") {
+              errorText = stringified;
+            }
+          } catch {
+            errorText = "Login failed";
+          }
         }
       }
-      // Final safety: ensure no [object Object] slips through
-      if (errorText === "[object Object]") {
+      
+      // Final safety check: reject [object Object]
+      if (errorText === "[object Object]" || !errorText.trim()) {
         errorText = "Login failed";
       }
+      
+      console.error("Login error:", { originalError: err, extracted: errorText });
       setError(errorText);
     } finally {
       setLoading(false);
